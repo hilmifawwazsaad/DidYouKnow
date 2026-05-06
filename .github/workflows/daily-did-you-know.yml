@@ -28,6 +28,7 @@ jobs:
         env:
           SUMOPOD_API_KEY: ${{ secrets.SUMOPOD_API_KEY }}
           SUMOPOD_API_URL: ${{ secrets.SUMOPOD_API_URL }}
+          SUMOPOD_MODEL: ${{ secrets.SUMOPOD_MODEL }}
         run: python scripts/generate_content.py
 
       - name: Commit and push new file
