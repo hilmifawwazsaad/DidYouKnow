@@ -1,0 +1,39 @@
+name: "Daily Did You Know Generator"
+
+on:
+  schedule:
+    - cron: "0 3 * * *"   # 10:00 WIB = 03:00 UTC
+  workflow_dispatch:       # bisa dijalankan manual
+
+permissions:
+  contents: write
+
+jobs:
+  generate-and-commit:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install openai python-dotenv
+
+      - name: Generate Did You Know content
+        env:
+          SUMOPOD_API_KEY: ${{ secrets.SUMOPOD_API_KEY }}
+          SUMOPOD_API_URL: ${{ secrets.SUMOPOD_API_URL }}
+        run: python scripts/generate_content.py
+
+      - name: Commit and push new file
+        run: |
+          git config --local user.name "github-actions[bot]"
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git add public/data/
+          git diff --cached --quiet && echo "No changes to commit" || git commit -m "feat: add Did You Know for $(date +%Y-%m-%d)"
+          git push
