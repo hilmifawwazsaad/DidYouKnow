@@ -1,41 +1,41 @@
-import * as React from "react"
-import { createMap } from "svg-dotted-map"
+import * as React from "react";
+import { createMap } from "svg-dotted-map";
 
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/utils";
 
 export interface Marker {
-  lat: number
-  lng: number
-  size?: number
-  pulse?: boolean
+  lat: number;
+  lng: number;
+  size?: number;
+  pulse?: boolean;
 }
 
 /** addMarkers returns markers with lat/lng removed; only x, y and other props (e.g. size) remain */
 type MapMarker<M extends Marker> = Omit<M, "lat" | "lng"> & {
-  x: number
-  y: number
-}
+  x: number;
+  y: number;
+};
 
 export interface DottedMapProps<
   M extends Marker = Marker,
 > extends React.SVGProps<SVGSVGElement> {
-  width?: number
-  height?: number
-  mapSamples?: number
-  markers?: M[]
-  dotColor?: string
-  markerColor?: string
-  dotRadius?: number
-  stagger?: boolean
-  pulse?: boolean
+  width?: number;
+  height?: number;
+  mapSamples?: number;
+  markers?: M[];
+  dotColor?: string;
+  markerColor?: string;
+  dotRadius?: number;
+  stagger?: boolean;
+  pulse?: boolean;
 
   renderMarkerOverlay?: (args: {
-    marker: MapMarker<M>
-    index: number
-    x: number
-    y: number
-    r: number
-  }) => React.ReactNode
+    marker: MapMarker<M>;
+    index: number;
+    x: number;
+    y: number;
+    r: number;
+  }) => React.ReactNode;
 }
 
 export function DottedMap<M extends Marker = Marker>({
@@ -57,31 +57,31 @@ export function DottedMap<M extends Marker = Marker>({
     width,
     height,
     mapSamples,
-  })
-  const processedMarkers = addMarkers(markers)
+  });
+  const processedMarkers = addMarkers(markers);
 
   // Compute stagger helpers in a single, simple pass
-  const sorted = [...points].sort((a, b) => a.y - b.y || a.x - b.x)
-  const rowMap = new Map<number, number>()
-  let step = 0
-  let prevY = Number.NaN
-  let prevXInRow = Number.NaN
+  const sorted = [...points].sort((a, b) => a.y - b.y || a.x - b.x);
+  const rowMap = new Map<number, number>();
+  let step = 0;
+  let prevY = Number.NaN;
+  let prevXInRow = Number.NaN;
 
   for (const p of sorted) {
     if (p.y !== prevY) {
-      prevY = p.y
-      prevXInRow = Number.NaN
-      if (!rowMap.has(p.y)) rowMap.set(p.y, rowMap.size)
+      prevY = p.y;
+      prevXInRow = Number.NaN;
+      if (!rowMap.has(p.y)) rowMap.set(p.y, rowMap.size);
     }
     if (!Number.isNaN(prevXInRow)) {
-      const delta = p.x - prevXInRow
-      if (delta > 0) step = step === 0 ? delta : Math.min(step, delta)
+      const delta = p.x - prevXInRow;
+      if (delta > 0) step = step === 0 ? delta : Math.min(step, delta);
     }
-    prevXInRow = p.x
+    prevXInRow = p.x;
   }
 
-  const xStep = step || 1
-  const yToRowIndex = rowMap
+  const xStep = step || 1;
+  const yToRowIndex = rowMap;
 
   return (
     <svg
@@ -91,8 +91,8 @@ export function DottedMap<M extends Marker = Marker>({
       {...svgProps}
     >
       {points.map((point, index) => {
-        const rowIndex = yToRowIndex.get(point.y) ?? 0
-        const offsetX = stagger && rowIndex % 2 === 1 ? xStep / 2 : 0
+        const rowIndex = yToRowIndex.get(point.y) ?? 0;
+        const offsetX = stagger && rowIndex % 2 === 1 ? xStep / 2 : 0;
         return (
           <circle
             cx={point.x + offsetX}
@@ -101,20 +101,20 @@ export function DottedMap<M extends Marker = Marker>({
             fill={dotColor}
             key={`${point.x}-${point.y}-${index}`}
           />
-        )
+        );
       })}
 
       {processedMarkers.map((marker, index) => {
-        const rowIndex = yToRowIndex.get(marker.y) ?? 0
-        const offsetX = stagger && rowIndex % 2 === 1 ? xStep / 2 : 0
+        const rowIndex = yToRowIndex.get(marker.y) ?? 0;
+        const offsetX = stagger && rowIndex % 2 === 1 ? xStep / 2 : 0;
 
-        const x = marker.x + offsetX
-        const y = marker.y
-        const r = marker.size ?? dotRadius
+        const x = marker.x + offsetX;
+        const y = marker.y;
+        const r = marker.size ?? dotRadius;
         const shouldPulse = pulse
           ? marker.pulse !== false
-          : marker.pulse === true
-        const pulseTo = r * 2.8
+          : marker.pulse === true;
+        const pulseTo = r * 2.8;
 
         return (
           <g key={`${marker.x}-${marker.y}-${index}`}>
@@ -179,8 +179,8 @@ export function DottedMap<M extends Marker = Marker>({
               r,
             })}
           </g>
-        )
+        );
       })}
     </svg>
-  )
+  );
 }

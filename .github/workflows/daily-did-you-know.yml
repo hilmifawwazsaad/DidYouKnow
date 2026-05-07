@@ -2,8 +2,8 @@ name: "Daily Did You Know Generator"
 
 on:
   schedule:
-    - cron: "0 3 * * *"   # 10:00 WIB = 03:00 UTC
-  workflow_dispatch:       # bisa dijalankan manual
+    - cron: "0 3 * * *"
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -31,10 +31,15 @@ jobs:
           SUMOPOD_MODEL: ${{ secrets.SUMOPOD_MODEL }}
         run: python scripts/generate_content.py
 
+      - name: Update badge count in README
+        run: |
+          COUNT=$(ls public/data/did-you-know-*.json 2>/dev/null | wc -l)
+          sed -i "s/fakta_dibuat-[0-9]*/fakta_dibuat-$COUNT/" README.md
+
       - name: Commit and push new file
         run: |
-          git config --local user.name "github-actions[bot]"
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git add public/data/
+          git config --local user.name "BOMZ[bot]"
+          git config --local user.email "hilmifawwazsaad@users.noreply.github.com"
+          git add public/data/ README.md
           git diff --cached --quiet && echo "No changes to commit" || git commit -m "feat: add Did You Know for $(date +%Y-%m-%d)"
           git push

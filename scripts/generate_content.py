@@ -13,24 +13,18 @@ model = os.environ.get("SUMOPOD_MODEL")
 if not api_key:
     print("Error: SUMOPOD_API_KEY environment variable not set.")
     exit(1)
+if not model:
+    print("Error: SUMOPOD_MODEL environment variable not set.")
+    exit(1)
 
 client = OpenAI(api_key=api_key, base_url=api_url)
 
-today = datetime.now()
-today_str = today.strftime("%Y-%m-%d")
-day_name = today.strftime("%A")
+today_str = datetime.now().strftime("%Y-%m-%d")
 
 output_dir = "public/data"
 os.makedirs(output_dir, exist_ok=True)
 filename = os.path.join(output_dir, f"did-you-know-{today_str}.json")
 latest_filename = os.path.join(output_dir, "latest.json")
-
-prompt = f"""Hari ini adalah {day_name}, {today_str}.
-
-Hasilkan 1 fakta menarik dalam bahasa Indonesia yang menarik dan informatif.
-Gunakan TEPAT dua key berikut, tidak boleh diganti:
-- "date": "{today_str}"
-- "fact": kalimat fakta menarik"""
 
 try:
     print(f"Memanggil API untuk tanggal {today_str}...")
@@ -39,26 +33,30 @@ try:
         messages=[
             {
                 "role": "system",
-                "content": "Kamu adalah ensiklopedia fakta menarik. Jawab HANYA dengan JSON object valid. Gunakan key 'date' dan 'fact' saja."
+                "content": (
+                    "Kamu seorang yang sangat berwawasan luas dengan informasi seputar dunia dan alam semesta."
+                    "Balas HANYA JSON: {\"date\": \"YYYY-MM-DD\", \"fact\": \"...\"}. "
+                    "Tanpa markdown, tanpa key lain."
+                ),
             },
             {
                 "role": "user",
-                "content": prompt
-            }
+                "content": (
+                    f"Tanggal: {today_str}. "
+                    "Tulis 1 fakta menarik dan mengejutkan dalam bahasa Indonesia, "
+                    "topik bebas (sains, sejarah, alam, atau budaya). "
+                    "Maksimal 2 kalimat, padat dan menarik."
+                ),
+            },
         ],
         max_tokens=300,
-        temperature=0.8,
-        response_format={"type": "json_object"}
+        temperature=0.9,
+        response_format={"type": "json_object"},
     )
 
-    raw_content = str(response.choices[0].message.content or "").strip()  # type: ignore[union-attr]
+    raw_content = str(response.choices[0].message.content or "").strip()
     content_json = json.loads(raw_content)
-
-    # Normalize key jika model masih pakai "fakta"
-    if "fakta" in content_json and "fact" not in content_json:
-        content_json["fact"] = content_json.pop("fakta")
-    if "date" not in content_json:
-        content_json["date"] = today_str
+    content_json.setdefault("date", today_str)
 
     with open(filename, "w", encoding="utf-8") as f:
         json.dump(content_json, f, ensure_ascii=False, indent=2)
