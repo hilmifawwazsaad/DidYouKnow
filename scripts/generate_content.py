@@ -1,4 +1,5 @@
 import os
+import glob
 import json
 from datetime import datetime
 from dotenv import load_dotenv
@@ -19,12 +20,46 @@ if not model:
 
 client = OpenAI(api_key=api_key, base_url=api_url)
 
-today_str = datetime.now().strftime("%Y-%m-%d")
+today = datetime.now()
+today_str = today.strftime("%Y-%m-%d")
 
 output_dir = "public/data"
 os.makedirs(output_dir, exist_ok=True)
 filename = os.path.join(output_dir, f"did-you-know-{today_str}.json")
 latest_filename = os.path.join(output_dir, "latest.json")
+
+CATEGORIES = [
+    "astronomi dan luar angkasa",
+    "biologi dan makhluk hidup",
+    "sejarah peradaban kuno",
+    "fisika dan kimia",
+    "geografi dan fenomena alam",
+    "teknologi dan penemuan",
+    "budaya dan tradisi unik dunia",
+    "matematika dan logika",
+    "arkeologi dan prasejarah",
+    "psikologi dan perilaku manusia",
+    "oseanografi dan kehidupan laut",
+    "botani dan dunia tumbuhan",
+]
+day_of_year = today.timetuple().tm_yday
+category = CATEGORIES[day_of_year % len(CATEGORIES)]
+
+previous_facts = []
+for json_file in sorted(glob.glob(os.path.join(output_dir, "did-you-know-*.json"))):
+    if today_str in json_file:
+        continue
+    try:
+        with open(json_file, encoding="utf-8") as f:
+            data = json.load(f)
+            if "fact" in data:
+                previous_facts.append(data["fact"])
+    except Exception:
+        pass
+recent_facts = previous_facts[-10:]
+avoid_section = "\n".join(f"- {f}" for f in recent_facts)
+
+print(f"Kategori hari ini: {category}")
 
 MAX_RETRIES = 3
 content_json = None
@@ -39,7 +74,7 @@ for attempt in range(1, MAX_RETRIES + 1):
                 {
                     "role": "system",
                     "content": (
-                        "Kamu seorang yang sangat berwawasan luas dengan informasi seputar dunia dan alam semesta."
+                        "Kamu seorang yang sangat berwawasan luas dengan informasi seputar dunia dan alam semesta. "
                         "Balas HANYA JSON: {\"date\": \"YYYY-MM-DD\", \"fact\": \"...\"}. "
                         "Tanpa markdown, tanpa key lain."
                     ),
@@ -48,13 +83,17 @@ for attempt in range(1, MAX_RETRIES + 1):
                     "role": "user",
                     "content": (
                         f"Tanggal: {today_str}. "
-                        "Tulis 1 fakta menarik dan mengejutkan dalam bahasa Indonesia, "
-                        "topik bebas (sains, sejarah, alam, atau budaya). "
-                        "Maksimal 2 kalimat, padat dan menarik."
+                        f"Fokus pada topik: {category}. "
+                        "Tulis 1 fakta menarik dan mengejutkan dalam bahasa Indonesia. "
+                        "Maksimal 2 kalimat, padat dan menarik.\n\n"
+                        + (
+                            f"JANGAN ulangi topik yang sudah pernah dibahas berikut ini:\n{avoid_section}"
+                            if avoid_section else ""
+                        )
                     ),
                 },
             ],
-            max_tokens=600,
+            max_tokens=700,
             temperature=0.9,
             response_format={"type": "json_object"},
         )
