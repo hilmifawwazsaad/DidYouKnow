@@ -45,7 +45,7 @@ CATEGORIES = [
 day_of_year = today.timetuple().tm_yday
 category = CATEGORIES[day_of_year % len(CATEGORIES)]
 
-previous_facts = []
+previous_facts: list[str] = []
 for json_file in sorted(glob.glob(os.path.join(output_dir, "did-you-know-*.json"))):
     if today_str in json_file:
         continue
@@ -56,7 +56,7 @@ for json_file in sorted(glob.glob(os.path.join(output_dir, "did-you-know-*.json"
                 previous_facts.append(data["fact"])
     except Exception:
         pass
-recent_facts = previous_facts[-10:]
+recent_facts = previous_facts[-5:]
 avoid_section = "\n".join(f"- {f}" for f in recent_facts)
 
 print(f"Kategori hari ini: {category}")
@@ -93,7 +93,7 @@ for attempt in range(1, MAX_RETRIES + 1):
                     ),
                 },
             ],
-            max_tokens=1000,
+            max_tokens=4096,
             temperature=0.9,
             response_format={"type": "json_object"},
         )
