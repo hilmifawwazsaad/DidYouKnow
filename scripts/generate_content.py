@@ -93,16 +93,12 @@ for attempt in range(1, MAX_RETRIES + 1):
                     ),
                 },
             ],
-            max_tokens=4096,
+            max_tokens=1024,
             temperature=0.9,
             response_format={"type": "json_object"},
         )
 
         choice = response.choices[0]
-        if choice.finish_reason == "length":
-            print(f"Percobaan {attempt}: Respons terpotong (finish_reason=length), mencoba ulang...")
-            continue
-
         raw_content = str(choice.message.content or "").strip()
         content_json = json.loads(raw_content)
         break
