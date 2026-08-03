@@ -93,7 +93,7 @@ for attempt in range(1, MAX_RETRIES + 1):
                     ),
                 },
             ],
-            max_tokens=700,
+            max_tokens=1000,
             temperature=0.9,
             response_format={"type": "json_object"},
         )
