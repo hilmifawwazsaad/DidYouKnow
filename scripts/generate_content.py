@@ -93,13 +93,32 @@ for attempt in range(1, MAX_RETRIES + 1):
                     ),
                 },
             ],
-            max_tokens=1024,
+            max_tokens=2048,
             temperature=0.9,
-            response_format={"type": "json_object"},
         )
 
         choice = response.choices[0]
+        finish_reason = getattr(choice, "finish_reason", "unknown")
         raw_content = str(choice.message.content or "").strip()
+
+        # Some reasoning models (e.g. DeepSeek) put the answer in reasoning_content
+        # when content is empty — log both fields for debugging
+        if not raw_content:
+            reasoning = str(getattr(choice.message, "reasoning_content", "") or "").strip()
+            print(f"Percobaan {attempt}: Respons kosong (finish_reason={finish_reason})")
+            print(f"reasoning_content preview: {reasoning[:200] if reasoning else '(kosong)'}")
+            if attempt < MAX_RETRIES:
+                print("Mencoba ulang...")
+                continue
+            exit(1)
+
+        # Strip markdown code fences if present
+        if raw_content.startswith("```"):
+            raw_content = raw_content.split("```")[1]
+            if raw_content.startswith("json"):
+                raw_content = raw_content[4:]
+            raw_content = raw_content.strip()
+
         content_json = json.loads(raw_content)
         break
 
